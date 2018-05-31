@@ -1,0 +1,17 @@
+<html py:extends="master.xhtml" py:strip="True">
+<head py:block="head" py:strip="True">
+  <title>Editing: ${wikipage.pagename}</title>
+</head>
+
+<body py:block="body" py:strip="True">
+   <div py:replace="wikipage.data">Page text goes here.</div>
+   <div py:replace="wikipage.pagename">Page text goes here.</div>
+<div>
+  <form action="/save" method="post">
+    <input type="hidden" name="pagename" value="${wikipage.pagename}"/>
+    <textarea name="data" py:content="wikipage.data" rows="10" cols="60"/>
+    <input type="submit" name="submit" value="Save"/>
+  </form>
+</div>
+</body>
+</html>

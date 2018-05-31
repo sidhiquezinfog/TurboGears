@@ -40,7 +40,12 @@ def bootstrap(command, conf, vars):
         u1.email_address = 'editor@somedomain.com'
         u1.password = 'editpass'
 
+        # tbl_register = model.Register(first_name="sdk",user_name="sdk",password="sdk",email="a@h.c",contact_no="123")
+        # model.DBSession.add(tbl_register)
         model.DBSession.add(u1)
+        page = model.Page(pagename="FrontPage", data="initial data")
+        model.DBSession.add(page)
+
         model.DBSession.flush()
         transaction.commit()
     except IntegrityError:

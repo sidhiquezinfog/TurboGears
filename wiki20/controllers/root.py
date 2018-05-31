@@ -15,8 +15,16 @@ from tgext.admin.controller import AdminController
 from wiki20.lib.base import BaseController
 from wiki20.controllers.error import ErrorController
 
+from wiki20.model.page import Page
+
 __all__ = ['RootController']
 
+
+from docutils.core import publish_parts
+import re
+wikiwords = re.compile(r"\b([A-Z]\w+[A-Z]+\w+)")
+
+from sqlalchemy.exc import InvalidRequestError
 
 class RootController(BaseController):
     """
@@ -40,10 +48,53 @@ class RootController(BaseController):
     def _before(self, *args, **kw):
         tmpl_context.project_name = "wiki20"
 
-    @expose('wiki20.templates.index')
-    def index(self):
-        """Handle the front-page."""
-        return dict(page='index')
+    # @expose('wiki20.templates.page')
+    # def index(self, pagename="FrontPage"):
+    #     """Handle the front-page."""
+    #     page = DBSession.query(Page).filter_by(pagename=pagename).one()
+    #
+    #     return dict(wikipage=page)
+
+    @expose('wiki20.templates.page')
+    def _default(self, pagename="FrontPage"):
+
+
+        try:
+            page = DBSession.query(Page).filter_by(pagename=pagename).one()
+        except InvalidRequestError:
+            raise redirect("notfound", pagename=pagename)
+
+        content = publish_parts(page.data, writer_name="html")["html_body"]
+        root = url('/')
+        content = wikiwords.sub(r'<a href="%s\1">\1</a>' % root, content)
+        return dict(content=content, wikipage=page)
+
+    @expose("wiki20.templates.edit")
+    def notfound(self, pagename):
+        page = Page(pagename=pagename, data="")
+        DBSession.add(page)
+        return dict(wikipage=page)
+
+    @expose("wiki20.templates.pagelist")
+    def pagelist(self):
+        print "pagelist"
+        pages = [page.pagename for page in DBSession.query(Page).order_by(Page.pagename)]
+        print "pages",pages
+        return dict(pages=pages)
+
+
+
+    @expose(template="wiki20.templates.edit")
+    def edit(self, pagename):
+        page = DBSession.query(Page).filter_by(pagename=pagename).one()
+        return dict(wikipage=page)
+
+    @expose()
+    def save(self, pagename, data, submit):
+        page = DBSession.query(Page).filter_by(pagename=pagename).one()
+        page.data = data
+        redirect("/" + pagename)
+
     @expose('wiki20.templates.about')
     def about(self):
         """Handle the 'about' page."""
@@ -51,8 +102,16 @@ class RootController(BaseController):
 
     @expose('wiki20.templates.register')
     def register(self):
-        """Handle the 'register' page."""
+        """This method showcases TG's access to the wsgi environment."""
         return dict(page='register')
+
+    @expose('wiki20.templates.page')
+    def page(self):
+        """This method showcases TG's access to the wsgi environment."""
+        return dict(page='page')
+
+
+
 
     @expose('wiki20.templates.environ')
     def environ(self):
